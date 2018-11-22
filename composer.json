@@ -1,0 +1,32 @@
+{
+  "name": "codeinc/ms-access-reader",
+  "version": "1.0.0",
+  "description": "Microsoft Access database reader using mdbtools",
+  "homepage": "https://github.com/CodeIncHQ/MsAccessReader",
+  "type": "library",
+  "license": "MIT",
+  "require": {
+    "php": ">=7.1"
+  },
+  "require-dev": {
+    "codeinc/error-renderer": "^1.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "CodeInc\\MsAccessReader\\": "src"
+    }
+  },
+  "authors": [
+    {
+      "name": "Joan Fabrégat",
+      "email": "joan@codeinc.fr",
+      "homepage": "https://www.codeinc.fr",
+      "role": "developer"
+    }
+  ],
+  "config": {
+    "preferred-install": {
+      "*": "dist"
+    }
+  }
+}
