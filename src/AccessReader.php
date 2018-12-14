@@ -42,7 +42,7 @@ class AccessReader
     public function __construct(string $dbPath)
     {
         $this->setDbPath($dbPath);
-        $this->checkShellCommands();
+        $this->errorIfMissingShellCommands();
     }
 
     /**
@@ -62,7 +62,7 @@ class AccessReader
     /**
      * @throws \RuntimeException
      */
-    private function checkShellCommands():void
+    private function errorIfMissingShellCommands():void
     {
         foreach (['mdb-tables', 'mdb-schema', 'mdb-export'] as $command) {
             if (empty(shell_exec('which '.escapeshellarg($command)))) {
@@ -76,21 +76,15 @@ class AccessReader
     }
 
     /**
-     * @return string
-     */
-    private function getBoundary():string
-    {
-        return '--'.uniqid('boundary').'--';
-    }
-
-    /**
+     * Lists tables.
+     *
      * @return \Generator|string[]
      */
     public function listTables():\Generator
     {
-        $boundary = $this->getBoundary();
-        $tablesList = shell_exec('mdb-tables -d'.escapeshellarg($boundary).' '.escapeshellarg($this->dbPath));
-        foreach (explode($boundary, trim($tablesList)) as $table) {
+        $delimiter = uniqid('boundary_');
+        $tablesList = shell_exec('mdb-tables -d'.escapeshellarg($delimiter).' '.escapeshellarg($this->dbPath));
+        foreach (explode($delimiter, trim($tablesList)) as $table) {
             if (!empty($table)) {
                 yield $table;
             }
@@ -98,6 +92,8 @@ class AccessReader
     }
 
     /**
+     * Exports a table's schema to SQL.
+     *
      * @param string $table
      * @param bool $dropTable
      * @param string $backend
@@ -116,15 +112,17 @@ class AccessReader
     }
 
     /**
+     * Exports a table's data to SQL.
+     *
      * @param string $table
      * @return \Generator|string[]
      */
     public function exportDataToSql(string $table):\Generator
     {
-        $boundary = $this->getBoundary();
-        $data = shell_exec('mdb-export -H -R'.escapeshellarg($boundary).' -I mysql '
+        $delimiter = uniqid('boundary_');
+        $data = shell_exec('mdb-export -H -R'.escapeshellarg($delimiter).' -I mysql '
             .escapeshellarg($this->dbPath).' '.escapeshellarg($table));
-        foreach (explode($boundary, $data) as $query) {
+        foreach (explode($delimiter, $data) as $query) {
             if (!empty($query)) {
                 yield $query;
             }
@@ -132,15 +130,20 @@ class AccessReader
     }
 
     /**
+     * Exports a table's content to an array.
+     *
      * @param string $table
      * @return \Generator|array[]
      */
     public function exportDataToArray(string $table):\Generator
     {
-        $data = shell_exec('mdb-export -H '.escapeshellarg($this->dbPath).' '.escapeshellarg($table));
-        foreach (explode("\n", $data) as $line) {
+        $colDelimiter = '|';
+        $rowDelimiter = uniqid("row_");
+        $data = shell_exec('mdb-export -H -d'.escapeshellarg($colDelimiter).' -R'.escapeshellarg($rowDelimiter)
+            .' '.escapeshellarg($this->dbPath).' '.escapeshellarg($table));
+        foreach (explode($rowDelimiter, $data) as $line) {
             if (!empty($line)) {
-                yield str_getcsv($line, ',', '"');
+                yield str_getcsv($line, $colDelimiter, '"');
             }
         }
     }
