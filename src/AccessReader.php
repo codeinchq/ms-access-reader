@@ -137,10 +137,13 @@ class AccessReader
      */
     public function exportDataToArray(string $table):\Generator
     {
-        $data = shell_exec('mdb-export -H '.escapeshellarg($this->dbPath).' '.escapeshellarg($table));
-        foreach (explode("\n", $data) as $line) {
+        $colDelimiter = '|';
+        $rowDelimiter = uniqid("row_");
+        $data = shell_exec('mdb-export -H -d'.escapeshellarg($colDelimiter).' -R'.escapeshellarg($rowDelimiter)
+            .' '.escapeshellarg($this->dbPath).' '.escapeshellarg($table));
+        foreach (explode($rowDelimiter, $data) as $line) {
             if (!empty($line)) {
-                yield str_getcsv($line, ',', '"');
+                yield str_getcsv($line, $colDelimiter, '"');
             }
         }
     }
